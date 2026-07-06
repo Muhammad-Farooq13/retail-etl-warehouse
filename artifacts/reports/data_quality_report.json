@@ -1,0 +1,16 @@
+{
+  "table": "transactions",
+  "total_rows": 50000,
+  "clean_rows": 48804,
+  "quarantined_rows": 1196,
+  "quarantine_rate": 0.0239,
+  "null_customer_id_count": 300,
+  "violation_counts": {
+    "duplicate_transaction_id": 298,
+    "invalid_transaction_date": 300,
+    "non_positive_quantity": 300,
+    "unknown_store_id": 0,
+    "unknown_product_id": 300,
+    "discount_out_of_range": 0
+  }
+}

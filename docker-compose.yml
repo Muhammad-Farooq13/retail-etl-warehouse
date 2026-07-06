@@ -1,0 +1,29 @@
+services:
+  etl:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    image: retail-etl-warehouse:latest
+    command: ["python", "-m", "src.pipeline"]
+    volumes:
+      - ./data:/app/data
+      - ./artifacts:/app/artifacts
+    profiles: ["etl"]
+
+  api:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    image: retail-etl-warehouse:latest
+    ports:
+      - "8001:8001"
+    volumes:
+      - ./data:/app/data
+      - ./artifacts:/app/artifacts
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/health').read()"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    restart: unless-stopped

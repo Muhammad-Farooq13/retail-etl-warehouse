@@ -1,0 +1,30 @@
+project:
+  name: retail-etl-warehouse
+  version: "1.0.0"
+  random_seed: 42
+
+data:
+  raw_transactions_path: "data/raw/transactions.csv"
+  raw_stores_path: "data/raw/stores.csv"
+  raw_products_path: "data/raw/products.csv"
+  n_transactions: 50000
+  n_stores: 25
+  n_products: 400
+  bad_row_injection_rate: 0.03   # fraction of intentionally messy rows, to exercise data quality checks
+
+warehouse:
+  db_path: "data/warehouse/retail.db"
+  staging_schema_sql: "sql/schema/01_staging_tables.sql"
+  marts_schema_sql: "sql/schema/02_marts_tables.sql"
+
+quality:
+  report_path: "artifacts/reports/data_quality_report.json"
+  max_null_rate: 0.02
+  max_duplicate_rate: 0.01
+  fail_pipeline_on_violation: false   # log + quarantine instead of hard failing, for portfolio demo purposes
+
+api:
+  host: "0.0.0.0"
+  port: 8001
+  title: "Retail Analytics API"
+  version: "1.0.0"

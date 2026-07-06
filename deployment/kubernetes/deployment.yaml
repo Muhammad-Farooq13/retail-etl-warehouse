@@ -1,0 +1,103 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: retail-etl-daily
+spec:
+  schedule: "0 3 * * *"   # 03:00 UTC daily
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+            - name: retail-etl
+              image: retail-etl-warehouse:latest
+              command: ["python", "-m", "src.pipeline"]
+              volumeMounts:
+                - name: warehouse-data
+                  mountPath: /app/data
+                - name: artifacts
+                  mountPath: /app/artifacts
+              resources:
+                requests:
+                  cpu: "500m"
+                  memory: "512Mi"
+                limits:
+                  cpu: "1"
+                  memory: "1Gi"
+          restartPolicy: OnFailure
+          volumes:
+            - name: warehouse-data
+              persistentVolumeClaim:
+                claimName: retail-warehouse-pvc
+            - name: artifacts
+              persistentVolumeClaim:
+                claimName: retail-artifacts-pvc
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: retail-analytics-api
+  labels:
+    app: retail-analytics-api
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: retail-analytics-api
+  template:
+    metadata:
+      labels:
+        app: retail-analytics-api
+    spec:
+      containers:
+        - name: retail-analytics-api
+          image: retail-etl-warehouse:latest
+          ports:
+            - containerPort: 8001
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "256Mi"
+            limits:
+              cpu: "1"
+              memory: "512Mi"
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8001
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8001
+            initialDelaySeconds: 20
+            periodSeconds: 20
+          volumeMounts:
+            - name: warehouse-data
+              mountPath: /app/data
+              readOnly: true
+      volumes:
+        - name: warehouse-data
+          persistentVolumeClaim:
+            claimName: retail-warehouse-pvc
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: retail-warehouse-pvc
+spec:
+  accessModes: ["ReadWriteOnce"]
+  resources:
+    requests:
+      storage: 2Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: retail-artifacts-pvc
+spec:
+  accessModes: ["ReadWriteOnce"]
+  resources:
+    requests:
+      storage: 1Gi
